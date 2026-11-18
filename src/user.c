@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/user.h"
+#include "../include/utils.h"
 
 static void rebuild_dsu(Directory *directory) {
     size_t i;

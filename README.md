@@ -152,3 +152,105 @@ users efficiently. Merge sort provides stable, predictable ranking and reusable
 comparator-based sorting of user records and community groups.
 
 Build and test instructions will be added with the implementation phases.
+
+## Build and run
+
+```powershell
+gcc -Wall -Wextra -std=c99 -Iinclude -o bin/connectsphere.exe src/*.c
+bin\connectsphere.exe
+```
+
+The Makefile supports Linux-style make installations:
+
+```text
+make all
+make tests
+make clean
+bin/connectsphere
+```
+
+On Windows, the direct gcc command is the portable build method.
+
+## Operation complexity
+
+| Structure/operation | Best | Average | Worst | Auxiliary space |
+|---|---:|---:|---:|---:|
+| DSU find (optimized) | O(alpha(n)) | O(alpha(n)) | O(alpha(n)) | O(n) |
+| DSU union by rank | O(alpha(n)) | O(alpha(n)) | O(alpha(n)) | O(n) |
+| DSU rebuild | O(V+E) | O(V+E) | O(V+E) | O(V) |
+| Hash insert/search/delete | O(1) | O(1) | O(n) | O(n) |
+| Hash rehash | O(n+m) | O(n+m) | O(n+m) | O(n+m) |
+| AVL insert/delete/search | O(log n) | O(log n) | O(log n) | O(n) |
+| AVL range/prefix/traversal | O(log n+k) | O(n) | O(n) | O(n) |
+| Heap insert | O(1) | O(log n) | O(log n) | O(n) |
+| Heap extract | O(log n) | O(log n) | O(log n) | O(n) |
+| Heap build | O(n) | O(n) | O(n) | O(1) |
+| Merge sort user/group | O(n log n) | O(n log n) | O(n log n) | O(n) |
+
+## Menu screenshots-as-text
+
+```text
+========== Main Menu ==========
+1 User management
+2 Friendship management
+3 Friend groups
+4 Friend suggestions
+5 Community ranking
+6 Sorted directory
+7 Data structure views
+8 Performance analysis
+9 Save / Load data
+0 Exit
+Choice: 9
+
+--- Save / Load Data ---
+1 Save  2 Load  3 Load sample data  0 Back
+Choice: 3
+Loaded 18 sample users and 25 friendships.
+
+Choice: 1
+Saved 18 users and friendship edges.
+```
+
+Additional menus expose the corresponding add/delete/update, edge, group,
+suggestion, ranking, traversal, range/prefix, hash, AVL, DSU, heap, save/load,
+and benchmark operations.
+
+## Testing
+
+Test binaries cover duplicate and missing hash entries, DSU merges and chain
+sizes, AVL search/deletion, equal-score heap ties, merge-sort stability,
+friendship/user deletion, save/reload consistency, and file-load rebuilding.
+
+## Limitations and future extensions
+
+- Maximum practical IDs are limited by DSU array indexing.
+- Persistence is plain text and does not provide concurrent access or
+  transaction rollback.
+- Name keys are ASCII-oriented and case-insensitive.
+- Performance tests use synthetic data and wall-clock `clock()` values.
+- Future work could add weighted edges, communities, graph shortest paths,
+  binary backups, or persistent database storage.
+
+## Viva questions
+
+1. **Why Union-Find?** It answers connectivity/group membership efficiently.
+2. **What does path compression do?** Flattens visited nodes toward the root.
+3. **Why union by rank?** It prevents deep, skewed trees.
+4. **Why rebuild after deletion?** DSU is historically optimized for additive operations.
+5. **Why separate chaining?** It tolerates collisions through linked chains.
+6. **Why division hashing for IDs?** It maps integer keys uniformly modulo a prime.
+7. **Why polynomial name hashing?** It incorporates every character and position.
+8. **What is the load-factor threshold?** Rehash when average bucket load exceeds 0.75.
+9. **Why AVL instead of a BST?** AVL guarantees logarithmic search and sorted traversal.
+10. **What are all rotations?** LL, RR, LR, and RL.
+11. **How does two-child AVL deletion work?** It replaces the node with its inorder successor.
+12. **Why a max-heap for suggestions?** Highest mutual-friend counts extract in O(log n).
+13. **How are suggestion ties resolved?** The smaller user ID wins.
+14. **Why merge sort for rankings?** It is stable and guarantees O(n log n).
+15. **What is merge-sort auxiliary space?** O(n).
+16. **How is community ranking stable?** Comparator ties fall back to ascending root ID.
+17. **What is an adjacency-list trade-off?** It is memory-efficient for sparse graphs.
+18. **How are edge removals detected?** Reciprocal edge lists are searched and rebuilt DSU is used.
+19. **How is invalid integer input handled?** `strtol` validates complete numeric input.
+20. **Why standard-library-only C?** It keeps the project portable and course-compatible.

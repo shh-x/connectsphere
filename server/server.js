@@ -19,7 +19,8 @@ const requestsByIp = Object.create(null);
 app.disable("x-powered-by");
 app.use((req, res, next) => {
   const origin = req.get("origin");
-  if (origin && !allowedOrigins.includes(origin)) {
+  const sameOrigin = `${req.protocol}://${req.get("host")}`;
+  if (origin && origin !== sameOrigin && !allowedOrigins.includes(origin)) {
     return res.status(403).json({
       ok: false, error: "Origin is not allowed",
       meta: { httpStatus: 403 }

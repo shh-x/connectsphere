@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>ConnectSphere</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#dashboard" aria-label="ConnectSphere home">
+        <span class="brand-mark">C</span>
+        <span><strong>ConnectSphere</strong><small>Social graph studio</small></span>
+      </a>
+      <div class="nav-label">WORKSPACE</div>
+      <nav class="primary-nav" aria-label="Main navigation">
+        <a href="#dashboard" data-page="dashboard"><span class="nav-icon">◫</span>Dashboard</a>
+        <a href="#users" data-page="users"><span class="nav-icon">♙</span>Users</a>
+        <a href="#friendships" data-page="friendships"><span class="nav-icon">↔</span>Friendships</a>
+        <a href="#groups" data-page="groups"><span class="nav-icon">◎</span>Communities</a>
+        <a href="#suggestions" data-page="suggestions"><span class="nav-icon">✳</span>Suggestions</a>
+        <a href="#network" data-page="network"><span class="nav-icon">⌘</span>Network graph</a>
+      </nav>
+      <div class="nav-label nav-label-spaced">STRUCTURES</div>
+      <nav class="primary-nav" aria-label="Data structure navigation">
+        <a href="#directory" data-page="directory"><span class="nav-icon">⌕</span>AVL directory</a>
+        <a href="#inspector" data-page="inspector"><span class="nav-icon">▤</span>Inspector</a>
+        <a href="#performance" data-page="performance"><span class="nav-icon">↗</span>Performance lab</a>
+        <a href="#data" data-page="data"><span class="nav-icon">▣</span>Data management</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="engine-status"><span class="status-dot"></span><span><b>C engine</b><small id="engine-status">Checking connection</small></span></div>
+        <button class="sidebar-theme" id="theme-toggle" type="button" aria-label="Toggle color theme">
+          <span>◐</span><span>Switch appearance</span>
+        </button>
+        <div class="sidebar-version">ConnectSphere <span>v1.0</span></div>
+      </div>
+    </aside>
+
+    <main class="main-shell">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobile-menu" type="button" aria-label="Open navigation">☰</button>
+        <div class="breadcrumbs"><span>Workspace</span><span class="crumb-separator">/</span><strong id="page-title">Dashboard</strong></div>
+        <div class="topbar-actions">
+          <span class="live-pill"><i></i> Live data</span>
+          <button class="icon-button" id="top-theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
+          <div class="avatar">CS</div>
+        </div>
+      </header>
+      <section id="page" class="page-content" aria-live="polite"></section>
+    </main>
+  </div>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <div id="modal-root"></div>
+  <div id="drawer-root"></div>
+</body>
+</html>

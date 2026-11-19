@@ -28,6 +28,7 @@ tests: $(TEST_BINARIES) bin/connectsphere_engine
 	@./tests/test_mergesort
 	@./tests/test_integration
 	@node tests/test_engine.js bin/connectsphere_engine
+	@node tests/test_api.js
 
 tests/test_hash: tests/test_hash.c src/hash.c src/utils.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ tests/test_hash.c src/hash.c src/utils.c

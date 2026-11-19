@@ -1,0 +1,14 @@
+{
+  "name": "connectsphere-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Thin REST bridge for the ConnectSphere C engine",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node ../tests/test_api.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

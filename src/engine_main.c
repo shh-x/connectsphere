@@ -591,7 +591,14 @@ static int command_dispatch(const JsonObject *request, JsonBuilder *data,
     }
     if (strcmp(cmd, "performance") == 0) {
         char report[8192];
-        if (!perf_run_all(report, sizeof(report))) {
+        int n;
+        if (!required_int(request, "n", 1000, 50000, &n,
+                          error, errorSize, status)) return 0;
+        if (n != 1000 && n != 10000 && n != 50000) {
+            set_error(error, errorSize, status, 400, "n must be 1000, 10000, or 50000");
+            return 0;
+        }
+        if (!perf_run_for_size(n, report, sizeof(report))) {
             set_error(error, errorSize, status, 500, "Unable to run performance analysis");
             return 0;
         }

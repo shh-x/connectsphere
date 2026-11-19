@@ -7,6 +7,7 @@ import { renderDirectory } from "./directory.js";
 import { renderInspector } from "./inspector.js";
 import { renderNetwork } from "./network.js";
 import { renderPerformance } from "./performance.js";
+import { renderDataManagement } from "./data.js";
 
 const page = document.querySelector("#page");
 const titles = {
@@ -25,18 +26,6 @@ const titles = {
 function setTheme(theme) {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem("connectsphere-theme", theme);
-}
-
-function renderPlaceholder(name) {
-  page.innerHTML = `<div class="page-heading"><div><p class="eyebrow">ConnectSphere workspace</p><h1>${escapeHtml(titles[name])}</h1><p class="page-subtitle">This workspace will be available in the next implementation phase.</p></div></div>
-    <section class="panel"><div class="empty-state"><div class="empty-icon">✳</div><strong>More network insights are on the way</strong><p>The C engine and REST API are connected. This page is being added phase by phase.</p><button class="button" id="load-sample">Load sample data</button></div></section>`;
-  page.querySelector("#load-sample").addEventListener("click", async () => {
-    try {
-      await api("/data/sample", { method: "POST" });
-      showToast("Sample network loaded.");
-      renderPage(name);
-    } catch (error) { showToast(error.message, true); }
-  });
 }
 
 async function renderDashboard() {
@@ -58,6 +47,7 @@ async function renderDashboard() {
       const [users, groups, graph, hash, tree] = await Promise.all([
         api("/users"), api("/groups/ranked"), api("/graph"), api("/structures/hash"), api("/directory/tree")
       ]);
+      if (!page.contains(stats)) return;
       const edges = graph.edges.length;
       const largest = groups.reduce((max, group) => Math.max(max, group.size), 0);
       const values = [
@@ -71,6 +61,7 @@ async function renderDashboard() {
       recent.innerHTML = users.length ? users.slice(0, 5).map((user) => `<a class="recent-user" href="#users"><span class="user-avatar">${escapeHtml(user.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase())}</span><span><b>${escapeHtml(user.name)}</b><small>${escapeHtml(user.city)}</small></span><span class="recent-count">${user.friendCount} friends</span></a>`).join("") : '<div class="empty-state">No users yet. Load the sample network or add someone.</div>';
       document.querySelector("#engine-status").textContent = "Connected · JSON line";
     } catch (error) {
+      if (!page.contains(stats)) return;
       stats.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}<p>Start the Node server and build the C engine.</p></div>`;
       recent.innerHTML = "";
       document.querySelector("#engine-status").textContent = "Unavailable";
@@ -78,10 +69,14 @@ async function renderDashboard() {
     }
   };
   await load();
-  page.querySelector("#refresh-dashboard").addEventListener("click", load);
+  const refreshButton = page.querySelector("#refresh-dashboard");
+  if (!refreshButton) return;
+  refreshButton.addEventListener("click", load);
   page.querySelector("#dashboard-sample").addEventListener("click", async () => {
+    if (!window.confirm("Load the sample network and discard unsaved in-memory changes?")) return;
     try {
       await api("/data/sample", { method: "POST" });
+      if (!page.querySelector("#dashboard-sample")) return;
       showToast("Sample network loaded.");
       await load();
     } catch (error) { showToast(error.message, true); }
@@ -105,7 +100,7 @@ async function renderPage(name) {
   if (name === "inspector") return renderInspector(page);
   if (name === "network") return renderNetwork(page);
   if (name === "performance") return renderPerformance(page);
-  renderPlaceholder(name);
+  if (name === "data") return renderDataManagement(page);
 }
 
 document.querySelectorAll("[data-page]").forEach((link) =>

@@ -21,10 +21,12 @@ export async function renderSuggestions(container) {
   try {
     const users = await api("/users");
     const select = container.querySelector("#suggest-user");
+    if (!select) return;
     select.innerHTML = `<option value="">Select a user</option>${userOptions(users)}`;
     if (users.length) select.value = String(users[0].id);
   } catch (error) { showToast(error.message, true); }
 
+  if (!container.querySelector("#popular-form")) return;
   const runPopular = async (event) => {
     if (event) event.preventDefault();
     const k = Number(container.querySelector("#popular-k").value);
@@ -41,6 +43,7 @@ export async function renderSuggestions(container) {
   container.querySelector("#popular-form").addEventListener("submit", runPopular);
   await runPopular();
 
+  if (!container.querySelector("#suggestion-form")) return;
   container.querySelector("#suggestion-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const id = Number(container.querySelector("#suggest-user").value);

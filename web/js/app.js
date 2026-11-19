@@ -3,6 +3,8 @@ import { renderUsers } from "./users.js";
 import { renderFriendships } from "./friendships.js";
 import { renderGroups } from "./groups.js";
 import { renderSuggestions } from "./suggestions.js";
+import { renderDirectory } from "./directory.js";
+import { renderInspector } from "./inspector.js";
 
 const page = document.querySelector("#page");
 const titles = {
@@ -97,6 +99,8 @@ async function renderPage(name) {
   if (name === "friendships") return renderFriendships(page);
   if (name === "groups") return renderGroups(page);
   if (name === "suggestions") return renderSuggestions(page);
+  if (name === "directory") return renderDirectory(page);
+  if (name === "inspector") return renderInspector(page);
   renderPlaceholder(name);
 }
 

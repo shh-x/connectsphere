@@ -74,6 +74,29 @@ int dsu_find(DSU *dsu, int element) {
     return root;
 }
 
+int dsu_find_trace(DSU *dsu, int element, int *path,
+                   int pathCapacity, int *pathLength) {
+    int root, current, length = 0;
+    if (pathLength) *pathLength = 0;
+    if (!dsu || element <= 0 || element >= dsu->capacity) return -1;
+    root = element;
+    while (dsu->parent[root] != root) {
+        if (path && length < pathCapacity) path[length] = root;
+        length++;
+        root = dsu->parent[root];
+    }
+    if (path && length < pathCapacity) path[length] = root;
+    length++;
+    current = element;
+    while (current != root) {
+        int next = dsu->parent[current];
+        dsu->parent[current] = root;
+        current = next;
+    }
+    if (pathLength) *pathLength = length < pathCapacity ? length : pathCapacity;
+    return root;
+}
+
 int dsu_find_no_compression(const DSU *dsu, int element) {
     if (!dsu || element <= 0 || element >= dsu->capacity) return -1;
     while (dsu->parent[element] != element) element = dsu->parent[element];

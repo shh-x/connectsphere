@@ -40,6 +40,13 @@ void dsu_reset(DSU *dsu);
    Time complexity: Near O(alpha(n)); without compression O(n). */
 int dsu_find(DSU *dsu, int element);
 
+/* Purpose: Find a root and record the path before compression.
+   Parameters: DSU, element, path buffer, buffer capacity, path length output.
+   Return: root or -1 for invalid elements.
+   Time complexity: Near O(alpha(n)) with compression. */
+int dsu_find_trace(DSU *dsu, int element, int *path,
+                   int pathCapacity, int *pathLength);
+
 /* Purpose: Find the root without path compression.
    Parameters: DSU, element.
    Return: root.

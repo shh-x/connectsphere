@@ -67,12 +67,15 @@ int directory_duplicate(Directory *directory, int id, const char *name);
    Time complexity: O(log V) amortized plus table operations. */
 int directory_add_user(Directory *directory, int id, const char *name,
                        int age, const char *city);
+int directory_add_user_ex(Directory *directory, int id, const char *name,
+                          int age, const char *city, AVLMeta *meta);
 
 /* Purpose: Delete a user and all incident friendships.
    Parameters: directory and user ID.
    Return: 1 on success, 0 when absent.
    Time complexity: O(V + E + N). */
 int directory_delete_user(Directory *directory, int id);
+int directory_delete_user_ex(Directory *directory, int id, AVLMeta *meta);
 
 /* Purpose: Update a user's name, age, and city.
    Parameters: directory, ID, and new fields.
@@ -80,6 +83,8 @@ int directory_delete_user(Directory *directory, int id);
    Time complexity: O(log V) plus hash operations. */
 int directory_update_user(Directory *directory, int id, const char *name,
                           int age, const char *city);
+int directory_update_user_ex(Directory *directory, int id, const char *name,
+                             int age, const char *city, AVLMeta *meta);
 
 /* Purpose: Add an undirected friendship.
    Parameters: directory and the two IDs.

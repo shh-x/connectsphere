@@ -9,7 +9,7 @@ TEST_BINARIES = tests/test_hash tests/test_dsu tests/test_avl tests/test_heap \
 
 .PHONY: all tests clean
 
-all: bin/connectsphere
+all: bin/connectsphere bin/connectsphere_engine
 
 bin:
 	mkdir -p bin
@@ -17,13 +17,17 @@ bin:
 bin/connectsphere: $(MODULE_SRCS) src/main.c src/cli_input.c | bin
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ src/main.c src/cli_input.c $(MODULE_SRCS)
 
-tests: $(TEST_BINARIES)
+bin/connectsphere_engine: $(MODULE_SRCS) src/engine_main.c src/json_protocol.c | bin
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ src/engine_main.c src/json_protocol.c $(MODULE_SRCS)
+
+tests: $(TEST_BINARIES) bin/connectsphere_engine
 	@./tests/test_hash
 	@./tests/test_dsu
 	@./tests/test_avl
 	@./tests/test_heap
 	@./tests/test_mergesort
 	@./tests/test_integration
+	@node tests/test_engine.js bin/connectsphere_engine
 
 tests/test_hash: tests/test_hash.c src/hash.c src/utils.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ tests/test_hash.c src/hash.c src/utils.c
@@ -46,4 +50,5 @@ tests/test_integration: tests/test_integration.c src/user.c src/hash.c src/dsu.c
 	src/dsu.c src/avl.c src/utils.c src/storage.c src/graph.c src/mergesort.c
 
 clean:
-	rm -f $(TEST_BINARIES)
+	rm -f $(TEST_BINARIES) bin/connectsphere bin/connectsphere_engine \
+		tests/integration_users.txt tests/integration_friendships.txt

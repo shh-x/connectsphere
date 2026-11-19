@@ -98,8 +98,8 @@ int directory_duplicate(Directory *directory, int id, const char *name) {
            directory_find_name(directory, name) != NULL;
 }
 
-int directory_add_user(Directory *directory, int id, const char *name,
-                       int age, const char *city) {
+int directory_add_user_ex(Directory *directory, int id, const char *name,
+                          int age, const char *city, AVLMeta *meta) {
     User *user;
     size_t i;
     char nameInput[100], cityInput[100], normalizedName[50], normalizedCity[40];
@@ -142,7 +142,7 @@ int directory_add_user(Directory *directory, int id, const char *name,
         directory->userCount--;
         return 0;
     }
-    directory->avlRoot = avl_insert(directory->avlRoot, normalizedName, id, 0);
+    directory->avlRoot = avl_insert_ex(directory->avlRoot, normalizedName, id, meta);
     if (!avl_search(directory->avlRoot, normalizedName)) {
         hash_delete(directory->idHash, id, normalizedName);
         hash_delete(directory->nameHash, id, normalizedName);
@@ -153,7 +153,12 @@ int directory_add_user(Directory *directory, int id, const char *name,
     return 1;
 }
 
-int directory_delete_user(Directory *directory, int id) {
+int directory_add_user(Directory *directory, int id, const char *name,
+                       int age, const char *city) {
+    return directory_add_user_ex(directory, id, name, age, city, NULL);
+}
+
+int directory_delete_user_ex(Directory *directory, int id, AVLMeta *meta) {
     User *user = directory_find_id(directory, id);
     size_t i;
     if (!user) return 0;
@@ -174,7 +179,7 @@ int directory_delete_user(Directory *directory, int id) {
         }
         hash_delete(directory->idHash, id, "");
         hash_delete(directory->nameHash, id, user->name);
-        directory->avlRoot = avl_delete(directory->avlRoot, user->name, 0);
+        directory->avlRoot = avl_delete_ex(directory->avlRoot, user->name, meta);
         for (i = index + 1; i < directory->userCount; i++)
             directory->users[i - 1] = directory->users[i];
         directory->userCount--;
@@ -195,8 +200,12 @@ int directory_delete_user(Directory *directory, int id) {
     return 1;
 }
 
-int directory_update_user(Directory *directory, int id, const char *name,
-                          int age, const char *city) {
+int directory_delete_user(Directory *directory, int id) {
+    return directory_delete_user_ex(directory, id, NULL);
+}
+
+int directory_update_user_ex(Directory *directory, int id, const char *name,
+                             int age, const char *city, AVLMeta *meta) {
     User *user = directory_find_id(directory, id);
     char oldName[50];
     char nameInput[100], cityInput[100], normalizedName[50], normalizedCity[40];
@@ -232,17 +241,22 @@ int directory_update_user(Directory *directory, int id, const char *name,
     if (!hash_insert(directory->nameHash, id, normalizedName, user)) {
         return 0;
     }
-    directory->avlRoot = avl_insert(directory->avlRoot, normalizedName, id, 0);
+    directory->avlRoot = avl_insert_ex(directory->avlRoot, normalizedName, id, meta);
     if (!avl_search(directory->avlRoot, normalizedName)) {
         hash_delete(directory->nameHash, id, normalizedName);
         return 0;
     }
     hash_delete(directory->nameHash, id, oldName);
-    directory->avlRoot = avl_delete(directory->avlRoot, oldName, 0);
+    directory->avlRoot = avl_delete_ex(directory->avlRoot, oldName, NULL);
     snprintf(user->name, sizeof(user->name), "%s", normalizedName);
     user->age = age;
     snprintf(user->city, sizeof(user->city), "%s", normalizedCity);
     return 1;
+}
+
+int directory_update_user(Directory *directory, int id, const char *name,
+                          int age, const char *city) {
+    return directory_update_user_ex(directory, id, name, age, city, NULL);
 }
 
 int directory_add_friendship(Directory *directory, int first, int second) {

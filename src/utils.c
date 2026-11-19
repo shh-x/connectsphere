@@ -40,7 +40,10 @@ int normalize_name(char *input, char *output, size_t size) {
 
 int normalize_city(char *input, char *output, size_t size) {
     char *text = trim_string(input);
+    size_t i;
     if (!text || !*text || strlen(text) >= size) return 0;
+    for (i = 0; text[i]; i++)
+        if ((unsigned char)text[i] < 0x20 || text[i] == ',') return 0;
     snprintf(output, size, "%s", text);
     return 1;
 }

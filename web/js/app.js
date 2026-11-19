@@ -5,6 +5,8 @@ import { renderGroups } from "./groups.js";
 import { renderSuggestions } from "./suggestions.js";
 import { renderDirectory } from "./directory.js";
 import { renderInspector } from "./inspector.js";
+import { renderNetwork } from "./network.js";
+import { renderPerformance } from "./performance.js";
 
 const page = document.querySelector("#page");
 const titles = {
@@ -101,6 +103,8 @@ async function renderPage(name) {
   if (name === "suggestions") return renderSuggestions(page);
   if (name === "directory") return renderDirectory(page);
   if (name === "inspector") return renderInspector(page);
+  if (name === "network") return renderNetwork(page);
+  if (name === "performance") return renderPerformance(page);
   renderPlaceholder(name);
 }
 

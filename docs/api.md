@@ -58,15 +58,33 @@ GET /directory/tree
 ```
 
 Suggestions and popularity use the C binary heap. Range, prefix, and sorted
-name listings use the C AVL tree.
+name listings use the C AVL tree. Range endpoints are inclusive and use the
+directory's name comparison. `/directory/tree` returns the C AVL topology,
+including each node's `id`, `name`, `height`, `balance`, `left`, and `right`.
 
-## Structure views and data operations
+## Graph and structure views
+
+`GET /graph` returns:
+
+```json
+{
+  "nodes": [{"id": 7, "name": "Ada Lovelace", "friendCount": 1, "groupId": 7}],
+  "edges": [{"source": 7, "target": 8}]
+}
+```
+
+Each undirected friendship is represented once in `edges`. A node's `groupId`
+is the C disjoint-set representative. The frontend may compute display
+coordinates, but graph membership and edges are supplied by the C engine.
+
+`GET /structures/hash` returns the ID and name hash bucket chains and load
+statistics. `/structures/dsu` returns parent, rank, set size, and root status
+for each active user. `/structures/heap` returns the current C heap array;
+it is empty until a heap-based query has been run.
+
+## Performance and data operations
 
 ```http
-GET  /structures/hash
-GET  /structures/dsu
-GET  /structures/heap
-GET  /graph
 POST /performance/run     {"n":1000}
 POST /data/sample
 POST /data/save
@@ -74,11 +92,20 @@ POST /data/load
 POST /data/reset
 ```
 
-`n` for performance is one of 1,000, 10,000, or 50,000. Saving and loading
-always use the server's `data/users.txt` and `data/friendships.txt`. Arbitrary
-filesystem paths and file uploads are not accepted. The engine is one
-server-wide in-memory dataset; this initial version does not isolate users or
-browsers.
+`n` for performance is one of 1,000, 10,000, or 50,000. The response data for
+that endpoint contains a human-readable C-generated `report` string.
+
+Data operations affect the single in-memory workspace as follows:
+
+- `POST /data/sample` replaces it with the built-in demo network and does not
+  write files.
+- `POST /data/load` replaces it from `data/users.txt` and
+  `data/friendships.txt` under `ENGINE_CWD`.
+- `POST /data/save` overwrites those two files with the current workspace.
+- `POST /data/reset` clears memory only and does not change saved files.
+
+Arbitrary filesystem paths and file uploads are not accepted. The engine is
+one server-wide in-memory dataset; users and browsers are not isolated.
 
 ## Status codes
 
@@ -103,5 +130,6 @@ Environment variables:
 - `RATE_LIMIT` (default `120` requests per IP per window)
 
 The bridge uses `spawn()` with an argument array and `shell:false`, serializes
-engine access, applies an eight-second request timeout, and restarts a crashed
-engine. CORS does not enable credentials.
+engine access, applies an eight-second timeout to ordinary requests and a
+60-second timeout to performance requests, and restarts a crashed engine.
+CORS does not enable credentials.

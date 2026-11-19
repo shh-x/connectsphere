@@ -140,6 +140,10 @@ async function run() {
     assert.equal((await call("GET", "/api/structures/heap")).status, 200);
     assert.equal((await call("GET", "/api/graph")).status, 200);
     assert.equal((await call("POST", "/api/performance/run", { n: 1000 })).status, 200);
+    result = await call("POST", "/api/performance/run", { n: 50000 });
+    assert.equal(result.status, 200);
+    assert.match(result.payload.data.report, /Performance analysis for N=50000/);
+    assert.match(result.payload.data.report, /Sorting \(same 10000 records\)/);
     assert.equal((await call("POST", "/api/performance/run", { n: 12 })).status, 400);
 
     assert.equal((await call("POST", "/api/data/save")).status, 200);

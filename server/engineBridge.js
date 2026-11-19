@@ -90,13 +90,13 @@ class EngineBridge {
     }
   }
 
-  send(command) {
-    const operation = this.queue.then(() => this.sendNow(command));
+  send(command, timeoutMs = this.timeoutMs) {
+    const operation = this.queue.then(() => this.sendNow(command, timeoutMs));
     this.queue = operation.catch(() => undefined);
     return operation;
   }
 
-  sendNow(command) {
+  sendNow(command, timeoutMs = this.timeoutMs) {
     if (this.closed) return Promise.reject(new Error("Engine bridge has been closed"));
     try {
       this.start();
@@ -113,7 +113,7 @@ class EngineBridge {
           pending.reject(new Error("C engine request timed out"));
           this.failChild(child, new Error("C engine request timed out"));
         }
-      }, this.timeoutMs);
+      }, timeoutMs);
       this.pending = { resolve, reject, timer, child };
       child.stdin.write(`${JSON.stringify(command)}\n`, (error) => {
         if (error && this.pending && this.pending.child === child) {

@@ -18,8 +18,8 @@ function createApiRouter(engine) {
       return register(...args);
     };
   }
-  const send = async (res, command) => {
-    const response = await engine.send(command);
+  const send = async (res, command, timeoutMs) => {
+    const response = await engine.send(command, timeoutMs);
     if (!response || typeof response.ok !== "boolean") {
       const error = new Error("C engine returned an invalid response");
       error.status = 502;
@@ -139,7 +139,7 @@ function createApiRouter(engine) {
       error.status = 400;
       throw error;
     }
-    return send(res, { cmd: "performance", n: req.body.n });
+    return send(res, { cmd: "performance", n: req.body.n }, 60000);
   });
   router.post("/data/sample", async (_req, res) =>
     send(res, { cmd: "sample" }));

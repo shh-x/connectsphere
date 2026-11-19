@@ -1,6 +1,8 @@
 import { api, escapeHtml, showLoading, showToast } from "./api.js";
 import { renderUsers } from "./users.js";
 import { renderFriendships } from "./friendships.js";
+import { renderGroups } from "./groups.js";
+import { renderSuggestions } from "./suggestions.js";
 
 const page = document.querySelector("#page");
 const titles = {
@@ -93,6 +95,8 @@ async function renderPage(name) {
   if (name === "dashboard") return renderDashboard();
   if (name === "users") return renderUsers(page);
   if (name === "friendships") return renderFriendships(page);
+  if (name === "groups") return renderGroups(page);
+  if (name === "suggestions") return renderSuggestions(page);
   renderPlaceholder(name);
 }
 

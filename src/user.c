@@ -7,6 +7,10 @@
 static void rebuild_dsu(Directory *directory) {
     size_t i;
     dsu_reset(&directory->dsu);
+    for (i = 1; i < (size_t)directory->dsu.capacity; i++)
+        directory->dsu.size[i] = 0;
+    for (i = 0; i < directory->userCount; i++)
+        directory->dsu.size[directory->users[i].id] = 1;
     for (i = 0; i < directory->adjacencyCapacity; i++) {
         FriendNode *node = directory->adjacency[i];
         while (node) {
@@ -37,21 +41,24 @@ static int ensure_adjacency(Directory *directory, int id) {
 }
 
 int directory_init(Directory *directory) {
+    size_t i;
+    if (!directory) return 0;
     memset(directory, 0, sizeof(*directory));
-    directory->users = NULL;
-    directory->userCapacity = 0;
-    directory->adjacency = NULL;
-    directory->adjacencyCapacity = 0;
-    directory->idHash = (HashTable *)malloc(sizeof(HashTable));
-    directory->nameHash = (HashTable *)malloc(sizeof(HashTable));
+    directory->idHash = (HashTable *)calloc(1, sizeof(HashTable));
+    directory->nameHash = (HashTable *)calloc(1, sizeof(HashTable));
     if (!directory->idHash || !directory->nameHash) {
-        free(directory->idHash); free(directory->nameHash);
+        directory_free(directory);
         return 0;
     }
     if (!hash_init(directory->idHash, HASH_BY_ID, 101) ||
         !hash_init(directory->nameHash, HASH_BY_NAME, 101) ||
-        !dsu_init(&directory->dsu, 101)) return 0;
-    ensure_adjacency(directory, 100);
+        !dsu_init(&directory->dsu, 101) ||
+        !ensure_adjacency(directory, 100)) {
+        directory_free(directory);
+        return 0;
+    }
+    for (i = 1; i < (size_t)directory->dsu.capacity; i++)
+        directory->dsu.size[i] = 0;
     return 1;
 }
 
@@ -75,11 +82,13 @@ void directory_free(Directory *directory) {
 }
 
 User *directory_find_id(Directory *directory, int id) {
+    if (!directory || !directory->idHash) return NULL;
     HashNode *node = hash_search_id(directory->idHash, id);
     return node ? (User *)node->data : NULL;
 }
 
 User *directory_find_name(Directory *directory, const char *name) {
+    if (!directory || !directory->nameHash || !name) return NULL;
     HashNode *node = hash_search_name(directory->nameHash, name);
     return node ? (User *)node->data : NULL;
 }
@@ -93,31 +102,54 @@ int directory_add_user(Directory *directory, int id, const char *name,
                        int age, const char *city) {
     User *user;
     size_t i;
-    if (!directory || id <= 0 || age < 1 || age > 120 ||
-        directory_duplicate(directory, id, name)) return 0;
+    char nameInput[100], cityInput[100], normalizedName[50], normalizedCity[40];
+    if (!directory || !name || !city || id <= 0 || age < 1 || age > 120)
+        return 0;
+    if (strlen(name) >= sizeof(nameInput) || strlen(city) >= sizeof(cityInput))
+        return 0;
+    snprintf(nameInput, sizeof(nameInput), "%s", name);
+    snprintf(cityInput, sizeof(cityInput), "%s", city);
+    if (!normalize_name(nameInput, normalizedName, sizeof(normalizedName)) ||
+        !normalize_city(cityInput, normalizedCity, sizeof(normalizedCity)) ||
+        directory_duplicate(directory, id, normalizedName)) return 0;
     if (directory->userCount == directory->userCapacity) {
         size_t newCapacity = directory->userCapacity ? directory->userCapacity * 2 : 16;
         User *newUsers = (User *)realloc(directory->users, newCapacity * sizeof(User));
         if (!newUsers) return 0;
         directory->users = newUsers;
         directory->userCapacity = newCapacity;
+        for (i = 0; i < directory->userCount; i++) {
+            HashNode *idNode = hash_search_id(directory->idHash, directory->users[i].id);
+            HashNode *nameNode = hash_search_name(directory->nameHash,
+                                                  directory->users[i].name);
+            if (idNode) idNode->data = &directory->users[i];
+            if (nameNode) nameNode->data = &directory->users[i];
+        }
     }
     if (!ensure_adjacency(directory, id)) return 0;
     user = &directory->users[directory->userCount++];
     user->id = id;
-    snprintf(user->name, sizeof(user->name), "%s", name);
+    snprintf(user->name, sizeof(user->name), "%s", normalizedName);
     user->age = age;
-    snprintf(user->city, sizeof(user->city), "%s", city);
+    snprintf(user->city, sizeof(user->city), "%s", normalizedCity);
     user->friendCount = 0;
-    if (!hash_insert(directory->idHash, id, name, user) ||
-        !hash_insert(directory->nameHash, id, name, user)) {
+    if (!hash_insert(directory->idHash, id, normalizedName, user)) {
         directory->userCount--;
         return 0;
     }
-    directory->avlRoot = avl_insert(directory->avlRoot, name, id, 0);
-    dsu_reset(&directory->dsu);
+    if (!hash_insert(directory->nameHash, id, normalizedName, user)) {
+        hash_delete(directory->idHash, id, normalizedName);
+        directory->userCount--;
+        return 0;
+    }
+    directory->avlRoot = avl_insert(directory->avlRoot, normalizedName, id, 0);
+    if (!avl_search(directory->avlRoot, normalizedName)) {
+        hash_delete(directory->idHash, id, normalizedName);
+        hash_delete(directory->nameHash, id, normalizedName);
+        directory->userCount--;
+        return 0;
+    }
     rebuild_dsu(directory);
-    (void)i;
     return 1;
 }
 
@@ -152,10 +184,10 @@ int directory_delete_user(Directory *directory, int id) {
         directory->users[i].friendCount = 0;
     for (i = 0; i < directory->adjacencyCapacity; i++) {
         FriendNode *node = directory->adjacency[i];
-        if (i < directory->userCapacity)
-            directory->users[i].friendCount = 0;
+        User *owner = directory_find_id(directory, (int)i);
+        if (owner)
+            owner->friendCount = 0;
         while (node) {
-            User *owner = directory_find_id(directory, (int)i);
             if (owner) owner->friendCount++;
             node = node->next;
         }
@@ -167,18 +199,49 @@ int directory_update_user(Directory *directory, int id, const char *name,
                           int age, const char *city) {
     User *user = directory_find_id(directory, id);
     char oldName[50];
-    if (!user || age < 1 || age > 120) return 0;
-    if (directory_find_name(directory, name) &&
-        name_compare(directory_find_name(directory, name)->name, user->name) != 0)
+    char nameInput[100], cityInput[100], normalizedName[50], normalizedCity[40];
+    User *duplicate;
+    if (!user || !name || !city || age < 1 || age > 120 ||
+        strlen(name) >= sizeof(nameInput) || strlen(city) >= sizeof(cityInput))
+        return 0;
+    snprintf(nameInput, sizeof(nameInput), "%s", name);
+    snprintf(cityInput, sizeof(cityInput), "%s", city);
+    if (!normalize_name(nameInput, normalizedName, sizeof(normalizedName)) ||
+        !normalize_city(cityInput, normalizedCity, sizeof(normalizedCity)))
+        return 0;
+    duplicate = directory_find_name(directory, normalizedName);
+    if (duplicate && duplicate != user)
         return 0;
     snprintf(oldName, sizeof(oldName), "%s", user->name);
+    if (strcmp(oldName, normalizedName) == 0) {
+        user->age = age;
+        snprintf(user->city, sizeof(user->city), "%s", normalizedCity);
+        return 1;
+    }
+    if (name_compare(oldName, normalizedName) == 0) {
+        HashNode *nameNode = hash_search_name(directory->nameHash, oldName);
+        AVLNode *treeNode = avl_search(directory->avlRoot, oldName);
+        if (!nameNode || !treeNode) return 0;
+        snprintf(user->name, sizeof(user->name), "%s", normalizedName);
+        snprintf(user->city, sizeof(user->city), "%s", normalizedCity);
+        user->age = age;
+        if (nameNode) snprintf(nameNode->name, sizeof(nameNode->name), "%s", normalizedName);
+        if (treeNode) snprintf(treeNode->name, sizeof(treeNode->name), "%s", normalizedName);
+        return 1;
+    }
+    if (!hash_insert(directory->nameHash, id, normalizedName, user)) {
+        return 0;
+    }
+    directory->avlRoot = avl_insert(directory->avlRoot, normalizedName, id, 0);
+    if (!avl_search(directory->avlRoot, normalizedName)) {
+        hash_delete(directory->nameHash, id, normalizedName);
+        return 0;
+    }
     hash_delete(directory->nameHash, id, oldName);
     directory->avlRoot = avl_delete(directory->avlRoot, oldName, 0);
-    snprintf(user->name, sizeof(user->name), "%s", name);
+    snprintf(user->name, sizeof(user->name), "%s", normalizedName);
     user->age = age;
-    snprintf(user->city, sizeof(user->city), "%s", city);
-    hash_insert(directory->nameHash, id, name, user);
-    directory->avlRoot = avl_insert(directory->avlRoot, name, id, 0);
+    snprintf(user->city, sizeof(user->city), "%s", normalizedCity);
     return 1;
 }
 

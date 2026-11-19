@@ -56,10 +56,4 @@ void heap_down(BinaryHeap *heap, size_t index);
    Time complexity: O(n). */
 void heap_build(BinaryHeap *heap);
 
-/* Purpose: Display heap array storage.
-   Parameters: heap.
-   Return: void.
-   Time complexity: O(n). */
-void heap_display(const BinaryHeap *heap);
-
 #endif

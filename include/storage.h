@@ -4,8 +4,8 @@
 #include "user.h"
 
 /* Purpose: Save users and friendships in the requested text formats.
-   Parameters: directory, output directories optional.
-   Return: 1 on full success, 0 on failure.
+   Parameters: directory and destination file paths.
+   Return: 1 on full success, 0 on file/serialization failure.
    Time complexity: O(V + E). */
 int storage_save(const Directory *directory, const char *usersFile,
                  const char *friendshipsFile);

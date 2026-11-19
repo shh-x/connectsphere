@@ -14,8 +14,8 @@ all: bin/connectsphere
 bin:
 	mkdir -p bin
 
-bin/connectsphere: $(MODULE_SRCS) src/main.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ src/main.c $(MODULE_SRCS)
+bin/connectsphere: $(MODULE_SRCS) src/main.c src/cli_input.c | bin
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ src/main.c src/cli_input.c $(MODULE_SRCS)
 
 tests: $(TEST_BINARIES)
 	@./tests/test_hash

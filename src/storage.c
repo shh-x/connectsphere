@@ -9,14 +9,10 @@ int storage_save(const Directory *directory, const char *usersFile,
     FILE *users, *edges;
     size_t i;
     users = fopen(usersFile, "w");
-    if (!users) {
-        printf("Could not open %s for writing.\n", usersFile);
-        return 0;
-    }
+    if (!users) return 0;
     edges = fopen(friendshipsFile, "w");
     if (!edges) {
         fclose(users);
-        printf("Could not open %s for writing.\n", friendshipsFile);
         return 0;
     }
     for (i = 0; i < directory->userCount; i++)
@@ -33,7 +29,6 @@ int storage_save(const Directory *directory, const char *usersFile,
         }
     }
     fclose(edges);
-    printf("Saved %zu users and friendship edges.\n", directory->userCount);
     return 1;
 }
 
@@ -45,10 +40,7 @@ int storage_load(Directory *directory, const char *usersFile,
     int loadedUsers = 0, badUsers = 0, loadedEdges = 0, badEdges = 0;
     directory_free(directory);
     if (!directory_init(directory)) return 0;
-    if (!users) {
-        printf("Missing or unreadable file: %s\n", usersFile);
-        return 0;
-    }
+    if (!users) return 0;
     while (fgets(line, sizeof(line), users)) {
         char *parts[4], *cursor = line, *comma;
         int id, age, k = 0;
@@ -73,10 +65,7 @@ int storage_load(Directory *directory, const char *usersFile,
     }
     fclose(users);
     edges = fopen(friendshipsFile, "r");
-    if (!edges) {
-        printf("Missing or unreadable file: %s\n", friendshipsFile);
-        return loadedUsers > 0;
-    }
+    if (!edges) return loadedUsers > 0;
     while (fgets(line, sizeof(line), edges)) {
         int first, second;
         if (sscanf(line, "%d,%d", &first, &second) == 2 &&
@@ -86,8 +75,9 @@ int storage_load(Directory *directory, const char *usersFile,
             badEdges++;
     }
     fclose(edges);
-    printf("Loaded %d users and %d friendships; skipped %d invalid user lines and %d invalid edge lines.\n",
-           loadedUsers, loadedEdges, badUsers, badEdges);
+    (void)badUsers;
+    (void)badEdges;
+    (void)loadedEdges;
     return 1;
 }
 
@@ -116,6 +106,5 @@ int storage_load_sample(Directory *directory) {
     for (i = 0; i < (int)edgeCount; i++)
         if (!directory_add_friendship(directory, edgePairs[i][0], edgePairs[i][1]))
             return 0;
-    printf("Loaded 18 sample users and %zu friendships.\n", edgeCount);
     return 1;
 }

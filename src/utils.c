@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <errno.h>
-#include <stdlib.h>
 #include "../include/utils.h"
 
 char *trim_string(char *text) {
@@ -13,31 +11,6 @@ char *trim_string(char *text) {
     while (end > text && isspace((unsigned char)end[-1])) end--;
     *end = '\0';
     return text;
-}
-
-int read_line(const char *prompt, char *buffer, size_t size) {
-    char *trimmed;
-    if (prompt && *prompt) printf("%s", prompt);
-    if (!fgets(buffer, (int)size, stdin)) return 0;
-    trimmed = trim_string(buffer);
-    if (trimmed != buffer) memmove(buffer, trimmed, strlen(trimmed) + 1);
-    return 1;
-}
-
-int read_int(const char *prompt, int minimum, int maximum) {
-    char buffer[128], *end;
-    long value;
-    while (1) {
-        if (!read_line(prompt, buffer, sizeof(buffer))) return 0;
-        errno = 0;
-        value = strtol(buffer, &end, 10);
-        if (errno || end == buffer || *trim_string(end) != '\0' ||
-            value < minimum || value > maximum) {
-            printf("Invalid integer. Enter a value from %d to %d.\n", minimum, maximum);
-            continue;
-        }
-        return (int)value;
-    }
 }
 
 int name_compare(const char *a, const char *b) {

@@ -3,18 +3,6 @@
 
 #include <stddef.h>
 
-/* Purpose: Read a trimmed line safely.
-   Parameters: prompt text, destination, destination size.
-   Return: 1 on success, 0 on EOF.
-   Time complexity: O(n). */
-int read_line(const char *prompt, char *buffer, size_t size);
-
-/* Purpose: Read an integer in an inclusive range.
-   Parameters: prompt, minimum, maximum.
-   Return: parsed integer, or 0 on repeated invalid/EOF input.
-   Time complexity: O(n) per attempt. */
-int read_int(const char *prompt, int minimum, int maximum);
-
 /* Purpose: Compare names case-insensitively.
    Parameters: two strings.
    Return: negative, zero, or positive.

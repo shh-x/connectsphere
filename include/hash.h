@@ -19,6 +19,13 @@ typedef struct HashTable {
     HashKeyType keyType;
 } HashTable;
 
+typedef struct {
+    size_t minChain;
+    size_t maxChain;
+    double averageChain;
+    double loadFactor;
+} HashStats;
+
 /* Purpose: Initialize a hash table with a prime bucket count.
    Parameters: table, key type, initial prime.
    Return: 1 on success, 0 on failure.
@@ -67,16 +74,10 @@ int hash_rehash(HashTable *table);
    Time complexity: O(1). */
 double hash_load_factor(const HashTable *table);
 
-/* Purpose: Print buckets and chain contents.
+/* Purpose: Calculate chain lengths and load factor.
    Parameters: table.
-   Return: void.
+   Return: statistics (all zero for an uninitialized table).
    Time complexity: O(n + m). */
-void hash_display(const HashTable *table);
-
-/* Purpose: Print chain-length statistics.
-   Parameters: table.
-   Return: void.
-   Time complexity: O(m). */
-void hash_chain_stats(const HashTable *table);
+HashStats hash_get_stats(const HashTable *table);
 
 #endif

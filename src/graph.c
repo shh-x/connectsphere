@@ -3,18 +3,31 @@
 #include "../include/graph.h"
 #include "../include/utils.h"
 
-int graph_list_friends(const Directory *directory, int id) {
+int graph_get_friends(const Directory *directory, int id, int **friendIds,
+                      size_t *count) {
     FriendNode *node;
-    int count = 0;
-    if ((size_t)id >= directory->adjacencyCapacity) return 0;
+    size_t found = 0, capacity = 0;
+    int *result = NULL;
+    if (!directory || !friendIds || !count || id <= 0 ||
+        (size_t)id >= directory->adjacencyCapacity ||
+        !directory_find_id((Directory *)directory, id)) return 0;
+    *friendIds = NULL;
+    *count = 0;
     for (node = directory->adjacency[id]; node; node = node->next) {
-        User *friend = directory_find_id((Directory *)directory, node->userId);
-        if (friend) {
-            printf("- %s (ID %d)\n", friend->name, friend->id);
-            count++;
+        if (directory_find_id((Directory *)directory, node->userId)) {
+            if (found == capacity) {
+                size_t nextCapacity = capacity ? capacity * 2 : 8;
+                int *larger = (int *)realloc(result, nextCapacity * sizeof(int));
+                if (!larger) { free(result); return 0; }
+                result = larger;
+                capacity = nextCapacity;
+            }
+            result[found++] = node->userId;
         }
     }
-    return count;
+    *friendIds = result;
+    *count = found;
+    return 1;
 }
 
 int graph_mutual_count(const Directory *directory, int first, int second) {
@@ -63,29 +76,23 @@ int graph_collect_and_rank_groups(Directory *directory,
     return 1;
 }
 
-void graph_list_all_groups(Directory *directory) {
-    GroupInfo *groups;
-    size_t count, i;
-    if (!graph_collect_and_rank_groups(directory, &groups, &count)) {
-        printf("Unable to collect groups.\n");
-        return;
-    }
-    for (i = 0; i < count; i++) {
-        int memberCount = 0, id;
-        printf("%zu. Root %d, size %d, representative %s\n",
-               i + 1, groups[i].rootId, groups[i].size,
-               groups[i].representativeName);
-        printf("   Members:");
-        for (id = 1; id < directory->dsu.capacity; id++) {
-            if (directory_find_id(directory, id) &&
-                dsu_find(&directory->dsu, id) == groups[i].rootId) {
-                User *user = directory_find_id(directory, id);
-                printf(" %s", user->name);
-                memberCount++;
-                if (memberCount < groups[i].size) printf(",");
-            }
-        }
-        printf("\n");
-    }
-    free(groups);
+int graph_get_group_members(Directory *directory, int id, int **memberIds,
+                            size_t *count) {
+    int root, current;
+    size_t found = 0;
+    int *members;
+    if (!directory || !memberIds || !count || !directory_find_id(directory, id))
+        return 0;
+    *memberIds = NULL;
+    *count = 0;
+    members = (int *)malloc(directory->userCount * sizeof(int));
+    if (directory->userCount && !members) return 0;
+    root = dsu_find(&directory->dsu, id);
+    for (current = 1; current < directory->dsu.capacity; current++)
+        if (directory_find_id(directory, current) &&
+            dsu_find(&directory->dsu, current) == root)
+            members[found++] = current;
+    *memberIds = members;
+    *count = found;
+    return 1;
 }

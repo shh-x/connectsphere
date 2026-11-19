@@ -168,29 +168,20 @@ int hash_rehash(HashTable *table) {
     return 1;
 }
 
-void hash_display(const HashTable *table) {
-    size_t i;
-    if (!table || !table->buckets) { printf("(empty table)\n"); return; }
-    for (i = 0; i < table->size; i++) {
-        HashNode *node = table->buckets[i];
-        printf("[%zu]", i);
-        for (; node; node = node->next)
-            printf(" -> %d:%s", node->id, node->name);
-        printf("\n");
-    }
-}
-
-void hash_chain_stats(const HashTable *table) {
-    size_t i, min = (size_t)-1, max = 0, total = 0;
-    if (!table || table->size == 0) { printf("No hash table data.\n"); return; }
+HashStats hash_get_stats(const HashTable *table) {
+    HashStats stats = {0, 0, 0.0, 0.0};
+    size_t i, total = 0;
+    if (!table || table->size == 0 || !table->buckets) return stats;
+    stats.minChain = (size_t)-1;
     for (i = 0; i < table->size; i++) {
         size_t length = 0;
         HashNode *node;
         for (node = table->buckets[i]; node; node = node->next) length++;
-        if (length < min) min = length;
-        if (length > max) max = length;
+        if (length < stats.minChain) stats.minChain = length;
+        if (length > stats.maxChain) stats.maxChain = length;
         total += length;
     }
-    printf("Chain lengths: min=%zu, max=%zu, average=%.3f\n",
-           min, max, (double)total / (double)table->size);
+    stats.averageChain = (double)total / (double)table->size;
+    stats.loadFactor = hash_load_factor(table);
+    return stats;
 }

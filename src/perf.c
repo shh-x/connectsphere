@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdarg.h>
+#include <string.h>
 #include "../include/perf.h"
 #include "../include/hash.h"
 #include "../include/avl.h"
@@ -56,6 +58,15 @@ static double elapsed_seconds(clock_t start) {
     return (double)(clock() - start) / (double)CLOCKS_PER_SEC;
 }
 
+static void report_append(char *report, size_t reportSize, const char *format, ...) {
+    size_t used = strlen(report);
+    va_list args;
+    if (used >= reportSize) return;
+    va_start(args, format);
+    vsnprintf(report + used, reportSize - used, format, args);
+    va_end(args);
+}
+
 static int max_depth_dsu(const DSU *dsu) {
     int i, maxDepth = 0;
     for (i = 1; i < dsu->capacity; i++) {
@@ -66,12 +77,15 @@ static int max_depth_dsu(const DSU *dsu) {
     return maxDepth;
 }
 
-void perf_run_all(void) {
+int perf_run_all(char *report, size_t reportSize) {
     static const int sizes[] = {1000, 10000, 50000};
     size_t s;
-    printf("=== ConnectSphere Performance Analysis ===\n");
-    printf("Lookup (hash / AVL / linear) seconds for synthetic names/IDs\n");
-    printf("N       Hash-avg   AVL        Linear\n");
+    if (!report || reportSize == 0) return 0;
+    report[0] = '\0';
+    report_append(report, reportSize, "=== ConnectSphere Performance Analysis ===\n");
+    report_append(report, reportSize,
+                  "Lookup (hash / AVL / linear) seconds for synthetic names/IDs\n");
+    report_append(report, reportSize, "N       Hash-avg   AVL        Linear\n");
     for (s = 0; s < 3; s++) {
         int n = sizes[s], i;
         HashTable idHash;
@@ -105,14 +119,15 @@ void perf_run_all(void) {
             for (j = 0; j < n; j++) if (linear[j] == target) break;
         }
         linearTime = elapsed_seconds(start);
-        printf("%-7d %-10.6f %-10.6f %-10.6f\n", n, hashTime, avlTime, linearTime);
+        report_append(report, reportSize, "%-7d %-10.6f %-10.6f %-10.6f\n",
+                      n, hashTime, avlTime, linearTime);
         avl_free(root);
         hash_free(&idHash);
         free(linear);
     }
 
-    printf("\nSorting (merge / bubble / qsort) seconds\n");
-    printf("N       Merge      Bubble     qsort\n");
+    report_append(report, reportSize, "\nSorting (merge / bubble / qsort) seconds\n");
+    report_append(report, reportSize, "N       Merge      Bubble     qsort\n");
     {
         static const int sortSizes[] = {1000, 10000};
         size_t si;
@@ -142,14 +157,15 @@ void perf_run_all(void) {
             start = clock();
             qsort(qsortArray, (size_t)n, sizeof(int), int_compare);
             qsortTime = elapsed_seconds(start);
-            printf("%-7d %-10.6f %-10.6f %-10.6f\n", n,
-                   mergeTime, bubbleTime, qsortTime);
+            report_append(report, reportSize, "%-7d %-10.6f %-10.6f %-10.6f\n",
+                          n, mergeTime, bubbleTime, qsortTime);
             free(mergeArray); free(bubbleArray); free(qsortArray); free(users);
         }
     }
 
-    printf("\nUnion-Find optimized vs naive\n");
-    printf("N       Optimized depth  Naive depth  Optimized time  Naive time\n");
+    report_append(report, reportSize, "\nUnion-Find optimized vs naive\n");
+    report_append(report, reportSize,
+                  "N       Optimized depth  Naive depth  Optimized time  Naive time\n");
     {
         static const int unionSizes[] = {1000, 10000, 50000};
         size_t ui;
@@ -166,15 +182,16 @@ void perf_run_all(void) {
             start = clock();
             for (i = 1; i < n; i++) dsu_union_naive(&naive, i, i + 1);
             naiveTime = elapsed_seconds(start);
-            printf("%-7d %-16d %-12d %-15.6f %.6f\n", n,
-                   max_depth_dsu(&optimized), max_depth_dsu(&naive),
-                   optimizedTime, naiveTime);
+            report_append(report, reportSize, "%-7d %-16d %-12d %-15.6f %.6f\n", n,
+                          max_depth_dsu(&optimized), max_depth_dsu(&naive),
+                          optimizedTime, naiveTime);
             dsu_free(&optimized); dsu_free(&naive);
         }
     }
 
-    printf("\nAVL height vs log2(n) and sorted-input unbalanced BST\n");
-    printf("N       AVL height  log2 bound  BST height\n");
+    report_append(report, reportSize,
+                  "\nAVL height vs log2(n) and sorted-input unbalanced BST\n");
+    report_append(report, reportSize, "N       AVL height  log2 bound  BST height\n");
     {
         static const int treeSizes[] = {1000, 10000, 50000};
         size_t ti;
@@ -192,14 +209,16 @@ void perf_run_all(void) {
                 double bound = 0.0;
                 int x;
                 for (x = n; x > 1; x /= 2) bound++;
-                printf("%-7d %-11d %-11.2f %-11d\n", n,
-                       avl_height(root), bound, bst_height(bst));
+                report_append(report, reportSize, "%-7d %-11d %-11.2f %-11d\n",
+                              n, avl_height(root), bound, bst_height(bst));
             }
             avl_free(root); bst_free(bst);
         }
     }
-    printf("\nConclusion: Hash and AVL lookup remain practical; linear search degrades\n");
-    printf("quadratically for repeated searches. Merge sort is predictable O(n log n),\n");
-    printf("while bubble sorting is poor. Union optimizations reduce tree depth and\n");
-    printf("AVL height remains logarithmic where a sorted unbalanced BST degenerates.\n");
+    report_append(report, reportSize,
+                  "\nConclusion: Hash and AVL lookup remain practical; linear search degrades\n"
+                  "quadratically for repeated searches. Merge sort is predictable O(n log n),\n"
+                  "while bubble sorting is poor. Union optimizations reduce tree depth and\n"
+                  "AVL height remains logarithmic where a sorted unbalanced BST degenerates.\n");
+    return 1;
 }

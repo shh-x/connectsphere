@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include "../include/heap.h"
 
@@ -75,12 +74,4 @@ void heap_build(BinaryHeap *heap) {
         size_t i = heap->size;
         while (i > 0) heap_down(heap, --i);
     }
-}
-
-void heap_display(const BinaryHeap *heap) {
-    size_t i;
-    printf("Heap array (size=%zu): ", heap->size);
-    for (i = 0; i < heap->size; i++)
-        printf("[%zu]id=%d/score=%d ", i, heap->items[i].userId, heap->items[i].score);
-    printf("\n");
 }
